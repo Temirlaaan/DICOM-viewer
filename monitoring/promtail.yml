@@ -1,0 +1,116 @@
+# =============================================================================
+# Promtail Configuration
+# =============================================================================
+# Log shipping to Loki for DICOM Web Viewer Stack
+# =============================================================================
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Docker container logs
+  - job_name: containers
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*log
+
+    pipeline_stages:
+      # Parse Docker JSON log format
+      - json:
+          expressions:
+            log: log
+            stream: stream
+            time: time
+            container_id: container_id
+
+      # Extract container name from Docker labels
+      - regex:
+          source: container_id
+          expression: '(?P<container_name>[^/]+)'
+
+      # Parse timestamp
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+
+      # Parse application JSON logs
+      - match:
+          selector: '{job="docker"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  message: message
+                  component: component
+                source: log
+
+            - labels:
+                level:
+                component:
+
+      # Set log output
+      - output:
+          source: log
+
+  # System logs
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          __path__: /var/log/syslog
+
+  # Auth logs
+  - job_name: auth
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: auth
+          __path__: /var/log/auth.log
+
+  # Nginx access logs (if mounted)
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          type: access
+          __path__: /var/log/nginx/access.log
+
+    pipeline_stages:
+      # Parse JSON access logs
+      - json:
+          expressions:
+            remote_addr: remote_addr
+            request: request
+            status: status
+            body_bytes_sent: body_bytes_sent
+            request_time: request_time
+            request_id: request_id
+
+      - labels:
+          status:
+          request_id:
+
+  # Nginx error logs
+  - job_name: nginx-error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          type: error
+          __path__: /var/log/nginx/error.log

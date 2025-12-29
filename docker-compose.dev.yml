@@ -1,0 +1,115 @@
+# =============================================================================
+# DICOM Web Viewer Stack - Development Overrides
+# =============================================================================
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL - Development settings
+  # ---------------------------------------------------------------------------
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+
+  # ---------------------------------------------------------------------------
+  # Keycloak - Development settings
+  # ---------------------------------------------------------------------------
+  keycloak:
+    ports:
+      - "8080:8080"
+    environment:
+      KC_LOG_LEVEL: DEBUG
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+
+  # ---------------------------------------------------------------------------
+  # Orthanc - Development settings
+  # ---------------------------------------------------------------------------
+  orthanc:
+    ports:
+      - "8042:8042"
+      - "4242:4242"
+    environment:
+      VERBOSE_ENABLED: "true"
+      VERBOSE_HTTP: "true"
+      VERBOSE_DICOM: "true"
+    volumes:
+      - ./orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
+      - ./orthanc/scripts:/etc/orthanc/scripts:ro
+      - ./data/dicom:/var/lib/orthanc/db
+
+  # ---------------------------------------------------------------------------
+  # OHIF - Development settings with hot reload
+  # ---------------------------------------------------------------------------
+  ohif:
+    ports:
+      - "3000:80"
+    volumes:
+      - ./ohif/app-config.js:/usr/share/nginx/html/app-config.js:ro
+
+  # ---------------------------------------------------------------------------
+  # Nginx - Development settings (HTTP only)
+  # ---------------------------------------------------------------------------
+  nginx:
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx-dev.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/includes:/etc/nginx/includes:ro
+
+  # ---------------------------------------------------------------------------
+  # Importer - Development settings
+  # ---------------------------------------------------------------------------
+  importer:
+    ports:
+      - "8081:8080"
+    environment:
+      LOG_LEVEL: debug
+      COOLDOWN_SECONDS: 10
+    volumes:
+      - ./data/inbox:/inbox
+      - ./data/processed:/processed
+      - ./data/failed:/failed
+      - ./importer:/app:ro
+
+  # ---------------------------------------------------------------------------
+  # Prometheus - Expose port for development
+  # ---------------------------------------------------------------------------
+  prometheus:
+    ports:
+      - "9090:9090"
+
+  # ---------------------------------------------------------------------------
+  # Grafana - Development settings
+  # ---------------------------------------------------------------------------
+  grafana:
+    ports:
+      - "3001:3000"
+    environment:
+      GF_LOG_LEVEL: debug
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+
+  # ---------------------------------------------------------------------------
+  # Loki - Expose port for development
+  # ---------------------------------------------------------------------------
+  loki:
+    ports:
+      - "3100:3100"
+
+  # ---------------------------------------------------------------------------
+  # Alertmanager - Expose port for development
+  # ---------------------------------------------------------------------------
+  alertmanager:
+    ports:
+      - "9093:9093"
+
+# =============================================================================
+# Override network to allow external access in development
+# =============================================================================
+networks:
+  backend:
+    internal: false

@@ -1,0 +1,119 @@
+{
+  "Name": "DenScan DICOM Server",
+  "RemoteAccessAllowed": true,
+  "AuthenticationEnabled": false,
+  "RegisteredUsers": {},
+
+  "HttpServerEnabled": true,
+  "HttpPort": 8042,
+  "HttpDescribeErrors": true,
+  "HttpCompressionEnabled": true,
+
+  "DicomServerEnabled": true,
+  "DicomAet": "DENSCAN",
+  "DicomPort": 4242,
+  "DicomCheckCalledAet": false,
+  "DicomCheckModalityHost": false,
+
+  "DefaultEncoding": "Utf8",
+  "Locale": "",
+
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+  "StorageCompression": false,
+  "MaximumStorageSize": 0,
+  "MaximumPatientCount": 0,
+  "MaximumStorageMode": "Recycle",
+
+  "LuaScripts": [
+    "/etc/orthanc/scripts/filter-by-clinic.lua",
+    "/etc/orthanc/scripts/on-stored-instance.lua"
+  ],
+
+  "Plugins": [
+    "/usr/share/orthanc/plugins/libOrthancPostgreSQLIndex.so",
+    "/usr/share/orthanc/plugins/libOrthancDicomWeb.so",
+    "/usr/share/orthanc/plugins/libOrthancAuthorization.so"
+  ],
+
+  "PostgreSQL": {
+    "EnableIndex": true,
+    "EnableStorage": false,
+    "Host": "postgres",
+    "Port": 5432,
+    "Database": "orthanc",
+    "Username": "dicom",
+    "Password": "CHANGE_ME_STRONG_PASSWORD_32_CHARS",
+    "EnableSsl": false,
+    "Lock": true,
+    "MaximumConnectionRetries": 10,
+    "ConnectionRetryInterval": 5
+  },
+
+  "DicomWeb": {
+    "Enable": true,
+    "Root": "/dicom-web/",
+    "EnableWado": true,
+    "WadoRoot": "/wado",
+    "Ssl": false,
+    "QidoCaseSensitive": false,
+    "Host": "",
+    "StudiesMetadata": "MainDicomTags",
+    "SeriesMetadata": "Full",
+    "MetadataWorkerThreadsCount": 4
+  },
+
+  "Authorization": {
+    "WebServiceRootUrl": "http://keycloak:8080/realms/dicom/protocol/openid-connect/userinfo",
+    "WebServiceUserName": "",
+    "WebServicePassword": "",
+    "StandardConfigurations": [
+      "osimis-web-viewer",
+      "stone-webviewer"
+    ],
+    "CheckedLevel": "studies",
+    "TokenHttpHeaders": ["authorization"],
+    "TokenGetArguments": ["token"]
+  },
+
+  "DicomModalities": {
+  },
+
+  "OrthancPeers": {
+  },
+
+  "HttpsCACertificates": "/etc/ssl/certs/ca-certificates.crt",
+
+  "UserMetadata": {
+    "clinic_id": 1024,
+    "import_timestamp": 1025,
+    "import_source": 1026
+  },
+
+  "Dictionary": {
+  },
+
+  "StableAge": 60,
+  "StrictAetComparison": false,
+  "StoreMD5ForAttachments": true,
+  "OverwriteInstances": false,
+  "MediaArchiveSize": 1,
+  "LimitFindResults": 0,
+  "LimitFindInstances": 0,
+  "LimitJobs": 10,
+  "LogExportedResources": true,
+  "KeepAlive": true,
+  "TcpNoDelay": true,
+  "HttpThreadsCount": 50,
+  "StoreDicom": true,
+  "DicomAssociationCloseDelay": 5,
+  "QueryRetrieveSize": 100,
+  "CaseSensitivePN": false,
+  "LoadPrivateDictionary": true,
+  "SynchronousCMove": true,
+  "JobsHistorySize": 100,
+  "SaveJobs": true,
+  "MetricsEnabled": true,
+  "ExecuteLuaEnabled": false,
+  "HttpVerbose": false
+}

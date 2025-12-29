@@ -1,0 +1,236 @@
+# =============================================================================
+# DICOM Stack Alert Rules
+# =============================================================================
+
+groups:
+  # ===========================================================================
+  # Service Availability Alerts
+  # ===========================================================================
+  - name: service-availability
+    rules:
+      - alert: OrthancDown
+        expr: up{job="orthanc"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: orthanc
+        annotations:
+          summary: "Orthanc DICOM server is down"
+          description: "Orthanc has been unreachable for more than 2 minutes. DICOM viewing is unavailable."
+          runbook_url: "https://docs.example.com/runbooks/orthanc-down"
+
+      - alert: KeycloakDown
+        expr: up{job="keycloak"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: keycloak
+        annotations:
+          summary: "Keycloak identity provider is down"
+          description: "Keycloak has been unreachable for more than 2 minutes. Authentication is unavailable."
+
+      - alert: ImporterDown
+        expr: up{job="importer"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: importer
+        annotations:
+          summary: "DICOM Importer service is down"
+          description: "The DICOM importer service has been unreachable for more than 5 minutes. New studies will not be imported."
+
+      - alert: LokiDown
+        expr: up{job="loki"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: loki
+        annotations:
+          summary: "Loki log aggregator is down"
+          description: "Loki has been unreachable for more than 5 minutes. Logs may be lost."
+
+  # ===========================================================================
+  # DICOM Import Alerts
+  # ===========================================================================
+  - name: dicom-imports
+    rules:
+      - alert: DICOMImportFailed
+        expr: increase(dicom_imports_total{status="failed"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: importer
+        annotations:
+          summary: "DICOM import failed"
+          description: "{{ $value }} import(s) failed in the last 5 minutes for clinic {{ $labels.clinic_id }}."
+
+      - alert: DICOMImportErrorRate
+        expr: |
+          sum(rate(dicom_imports_total{status=~"failed|error"}[15m])) by (clinic_id)
+          /
+          sum(rate(dicom_imports_total[15m])) by (clinic_id)
+          > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: importer
+        annotations:
+          summary: "High DICOM import error rate"
+          description: "More than 10% of imports are failing for clinic {{ $labels.clinic_id }}."
+
+      - alert: DICOMImportQueueBacklog
+        expr: dicom_pending_imports > 10
+        for: 15m
+        labels:
+          severity: warning
+          service: importer
+        annotations:
+          summary: "DICOM import queue backlog"
+          description: "{{ $value }} studies are waiting to be imported. Processing may be slow."
+
+      - alert: DICOMImportSlow
+        expr: histogram_quantile(0.95, rate(dicom_import_duration_seconds_bucket[15m])) > 600
+        for: 10m
+        labels:
+          severity: warning
+          service: importer
+        annotations:
+          summary: "DICOM imports are slow"
+          description: "95th percentile import time is {{ $value | humanizeDuration }}."
+
+  # ===========================================================================
+  # Disk Space Alerts
+  # ===========================================================================
+  - name: disk-space
+    rules:
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/data"} / node_filesystem_size_bytes{mountpoint="/data"}) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+          service: storage
+        annotations:
+          summary: "Low disk space on DICOM storage"
+          description: "Less than 20% disk space remaining on /data. Current: {{ $value | printf \"%.1f\" }}%"
+
+      - alert: DiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/data"} / node_filesystem_size_bytes{mountpoint="/data"}) * 100 < 10
+        for: 2m
+        labels:
+          severity: critical
+          service: storage
+        annotations:
+          summary: "Critical disk space on DICOM storage"
+          description: "Less than 10% disk space remaining. Imports will fail soon. Current: {{ $value | printf \"%.1f\" }}%"
+
+  # ===========================================================================
+  # SSL Certificate Alerts
+  # ===========================================================================
+  - name: ssl-certificates
+    rules:
+      - alert: CertificateExpiringSoon
+        expr: |
+          (probe_ssl_earliest_cert_expiry - time()) / 86400 < 14
+        for: 1h
+        labels:
+          severity: warning
+          service: nginx
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate will expire in {{ $value | printf \"%.0f\" }} days."
+
+      - alert: CertificateExpired
+        expr: |
+          (probe_ssl_earliest_cert_expiry - time()) < 0
+        for: 1m
+        labels:
+          severity: critical
+          service: nginx
+        annotations:
+          summary: "SSL certificate has expired"
+          description: "SSL certificate has expired. HTTPS access is broken."
+
+  # ===========================================================================
+  # Authentication Alerts
+  # ===========================================================================
+  - name: authentication
+    rules:
+      - alert: HighFailedLoginRate
+        expr: |
+          sum(rate(keycloak_login_errors_total[15m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: keycloak
+        annotations:
+          summary: "High rate of failed logins"
+          description: "{{ $value | printf \"%.1f\" }} failed logins per minute. Possible brute force attack."
+
+      - alert: KeycloakHighMemory
+        expr: |
+          jvm_memory_used_bytes{job="keycloak"} / jvm_memory_max_bytes{job="keycloak"} > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          service: keycloak
+        annotations:
+          summary: "Keycloak high memory usage"
+          description: "Keycloak is using more than 90% of available memory."
+
+  # ===========================================================================
+  # Performance Alerts
+  # ===========================================================================
+  - name: performance
+    rules:
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="orthanc"}[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+          service: orthanc
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile API latency is {{ $value | humanizeDuration }}."
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
+          /
+          sum(rate(http_requests_total[5m])) by (job)
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate for {{ $labels.job }}"
+          description: "More than 5% of requests are failing. Current error rate: {{ $value | printf \"%.1f%%\" }}"
+
+  # ===========================================================================
+  # Database Alerts
+  # ===========================================================================
+  - name: database
+    rules:
+      - alert: PostgresConnectionPoolExhausted
+        expr: |
+          pg_stat_activity_count{datname="orthanc"} / pg_settings_max_connections > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "PostgreSQL connection pool nearly exhausted"
+          description: "PostgreSQL is using more than 90% of max connections."
+
+      - alert: PostgresReplicationLag
+        expr: |
+          pg_replication_lag > 300
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "PostgreSQL replication lag"
+          description: "Replication lag is {{ $value | humanizeDuration }}."

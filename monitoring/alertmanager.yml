@@ -1,0 +1,122 @@
+# =============================================================================
+# Alertmanager Configuration
+# =============================================================================
+# Alert routing and notification for DICOM Web Viewer Stack
+# =============================================================================
+
+global:
+  # SMTP configuration for email alerts
+  # smtp_smarthost: 'smtp.example.com:587'
+  # smtp_from: 'alertmanager@denscan.kz'
+  # smtp_auth_username: 'alertmanager@denscan.kz'
+  # smtp_auth_password: 'CHANGE_ME'
+  # smtp_require_tls: true
+
+  # Default resolve timeout
+  resolve_timeout: 5m
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route tree
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'severity', 'service']
+
+  # Wait before sending grouped alerts
+  group_wait: 30s
+
+  # Wait between alert group sends
+  group_interval: 5m
+
+  # Wait before resending an alert
+  repeat_interval: 4h
+
+  # Child routes
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Warning alerts
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      repeat_interval: 4h
+
+    # Import failures - special handling
+    - match:
+        alertname: DICOMImportFailed
+      receiver: 'import-alerts'
+      group_wait: 1m
+      repeat_interval: 30m
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit warning alerts when critical is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+
+# Receivers
+receivers:
+  # Default receiver (logs only)
+  - name: 'default-receiver'
+    # webhook_configs:
+    #   - url: 'http://localhost:5001/'
+
+  # Critical alerts
+  - name: 'critical-alerts'
+    # Email notifications
+    # email_configs:
+    #   - to: 'admin@denscan.kz'
+    #     send_resolved: true
+
+    # Telegram notifications
+    # telegram_configs:
+    #   - bot_token: 'YOUR_BOT_TOKEN'
+    #     chat_id: YOUR_CHAT_ID
+    #     parse_mode: 'HTML'
+    #     message: |
+    #       🚨 <b>CRITICAL ALERT</b>
+    #       <b>Alert:</b> {{ .CommonAnnotations.summary }}
+    #       <b>Description:</b> {{ .CommonAnnotations.description }}
+    #       <b>Severity:</b> {{ .CommonLabels.severity }}
+
+    # Webhook for external integrations
+    webhook_configs:
+      - url: 'http://localhost:9999/webhook'  # Placeholder
+        send_resolved: true
+
+  # Warning alerts
+  - name: 'warning-alerts'
+    # email_configs:
+    #   - to: 'admin@denscan.kz'
+    #     send_resolved: true
+
+    webhook_configs:
+      - url: 'http://localhost:9999/webhook'
+        send_resolved: true
+
+  # Import-specific alerts
+  - name: 'import-alerts'
+    # telegram_configs:
+    #   - bot_token: 'YOUR_BOT_TOKEN'
+    #     chat_id: YOUR_CHAT_ID
+    #     message: |
+    #       ⚠️ DICOM Import Failed
+    #       Clinic: {{ .CommonLabels.clinic_id }}
+    #       Details: {{ .CommonAnnotations.description }}
+
+    webhook_configs:
+      - url: 'http://localhost:9999/webhook'
+        send_resolved: true

@@ -1,0 +1,488 @@
+{
+  "id": "dicom",
+  "realm": "dicom",
+  "displayName": "DICOM Imaging Portal",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>DICOM Imaging Portal</span></div>",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "defaultSignatureAlgorithm": "RS256",
+  "accessTokenLifespan": 300,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 28800,
+  "ssoSessionMaxLifespan": 36000,
+  "ssoSessionIdleTimeoutRememberMe": 0,
+  "ssoSessionMaxLifespanRememberMe": 0,
+  "offlineSessionIdleTimeout": 2592000,
+  "offlineSessionMaxLifespanEnabled": false,
+  "offlineSessionMaxLifespan": 5184000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "accessCodeLifespanLogin": 1800,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "oauth2DeviceCodeLifespan": 600,
+  "oauth2DevicePollingInterval": 5,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and notUsername",
+  "smtpServer": {},
+  "loginTheme": "keycloak",
+  "accountTheme": "keycloak.v2",
+  "adminTheme": "keycloak.v2",
+  "emailTheme": "keycloak",
+  "eventsEnabled": true,
+  "eventsExpiration": 604800,
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "LOGOUT",
+    "LOGOUT_ERROR",
+    "CODE_TO_TOKEN",
+    "CODE_TO_TOKEN_ERROR",
+    "CLIENT_LOGIN",
+    "CLIENT_LOGIN_ERROR",
+    "REFRESH_TOKEN",
+    "REFRESH_TOKEN_ERROR",
+    "REGISTER",
+    "REGISTER_ERROR",
+    "UPDATE_EMAIL",
+    "UPDATE_PROFILE",
+    "UPDATE_PASSWORD",
+    "SEND_RESET_PASSWORD",
+    "SEND_RESET_PASSWORD_ERROR",
+    "GRANT_CONSENT",
+    "REVOKE_GRANT"
+  ],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "roles": {
+    "realm": [
+      {
+        "id": "admin-role",
+        "name": "admin",
+        "description": "Full administrative access to DICOM system",
+        "composite": false
+      },
+      {
+        "id": "physician-role",
+        "name": "physician",
+        "description": "View and analyze studies from assigned clinics",
+        "composite": false
+      },
+      {
+        "id": "technician-role",
+        "name": "technician",
+        "description": "Upload studies only",
+        "composite": false
+      }
+    ],
+    "client": {
+      "ohif-viewer": [
+        {
+          "id": "viewer-user",
+          "name": "viewer-user",
+          "description": "Standard viewer access"
+        }
+      ],
+      "orthanc-api": [
+        {
+          "id": "api-read",
+          "name": "read",
+          "description": "Read access to DICOM data"
+        },
+        {
+          "id": "api-write",
+          "name": "write",
+          "description": "Write access to DICOM data"
+        }
+      ]
+    }
+  },
+  "groups": [
+    {
+      "id": "clinics-group",
+      "name": "clinics",
+      "path": "/clinics",
+      "subGroups": [
+        {
+          "id": "denscan-central",
+          "name": "denscan-central",
+          "path": "/clinics/denscan-central",
+          "attributes": {
+            "clinic_id": ["denscan-central"],
+            "clinic_name": ["DenScan Central Clinic"]
+          }
+        },
+        {
+          "id": "denscan-almaty",
+          "name": "denscan-almaty",
+          "path": "/clinics/denscan-almaty",
+          "attributes": {
+            "clinic_id": ["denscan-almaty"],
+            "clinic_name": ["DenScan Almaty Branch"]
+          }
+        },
+        {
+          "id": "partner-clinic",
+          "name": "partner-clinic",
+          "path": "/clinics/partner-clinic",
+          "attributes": {
+            "clinic_id": ["partner-clinic"],
+            "clinic_name": ["Partner Dental Clinic"]
+          }
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "id": "ohif-viewer-client",
+      "clientId": "ohif-viewer",
+      "name": "OHIF Viewer",
+      "description": "OHIF DICOM Web Viewer - Public SPA Client",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "fullScopeAllowed": true,
+      "rootUrl": "https://imaging.denscan.kz",
+      "baseUrl": "https://imaging.denscan.kz",
+      "redirectUris": [
+        "https://imaging.denscan.kz/*",
+        "http://localhost:3000/*",
+        "http://localhost/*"
+      ],
+      "webOrigins": [
+        "https://imaging.denscan.kz",
+        "http://localhost:3000",
+        "http://localhost"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://imaging.denscan.kz/*##http://localhost:3000/*##http://localhost/*"
+      },
+      "protocolMappers": [
+        {
+          "id": "clinic-ids-mapper",
+          "name": "clinic_ids",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "clinic_ids",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clinic_ids",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "id": "group-membership-mapper",
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "groups",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "id": "realm-roles-mapper",
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access"
+      ]
+    },
+    {
+      "id": "orthanc-api-client",
+      "clientId": "orthanc-api",
+      "name": "Orthanc API",
+      "description": "Orthanc DICOM Server - Confidential Client",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "CHANGE_ME_ORTHANC_CLIENT_SECRET",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "id": "orthanc-clinic-ids-mapper",
+          "name": "clinic_ids",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "clinic_ids",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clinic_ids",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "id": "orthanc-groups-mapper",
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "groups",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ]
+    },
+    {
+      "id": "grafana-client",
+      "clientId": "grafana",
+      "name": "Grafana Monitoring",
+      "description": "Grafana Dashboard - OAuth Client",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "CHANGE_ME_GRAFANA_CLIENT_SECRET",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "https://imaging.denscan.kz/grafana",
+      "baseUrl": "/grafana",
+      "redirectUris": [
+        "https://imaging.denscan.kz/grafana/*",
+        "http://localhost:3001/*"
+      ],
+      "webOrigins": [
+        "https://imaging.denscan.kz",
+        "http://localhost:3001"
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ]
+    },
+    {
+      "id": "admin-cli-client",
+      "clientId": "admin-cli",
+      "name": "Admin CLI",
+      "description": "CLI client for administrative scripts",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "CHANGE_ME_ADMIN_CLI_SECRET",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "fullScopeAllowed": true
+    }
+  ],
+  "clientScopes": [
+    {
+      "id": "dicom-scope",
+      "name": "dicom",
+      "description": "DICOM data access scope",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "Access to DICOM imaging data"
+      },
+      "protocolMappers": [
+        {
+          "id": "dicom-audience-mapper",
+          "name": "dicom-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "orthanc-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "defaultDefaultClientScopes": [
+    "role_list",
+    "profile",
+    "email",
+    "roles",
+    "web-origins"
+  ],
+  "defaultOptionalClientScopes": [
+    "offline_access",
+    "address",
+    "phone"
+  ],
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xFrameOptions": "SAMEORIGIN",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+    "xXSSProtection": "1; mode=block",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "Update Profile",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 40,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    }
+  ],
+  "users": [
+    {
+      "id": "admin-user",
+      "username": "admin",
+      "email": "admin@denscan.kz",
+      "firstName": "System",
+      "lastName": "Administrator",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "CHANGE_ME_ON_FIRST_LOGIN",
+          "temporary": true
+        }
+      ],
+      "realmRoles": [
+        "admin",
+        "default-roles-dicom"
+      ],
+      "groups": [
+        "/clinics/denscan-central",
+        "/clinics/denscan-almaty",
+        "/clinics/partner-clinic"
+      ],
+      "attributes": {
+        "clinic_ids": ["denscan-central", "denscan-almaty", "partner-clinic"]
+      }
+    },
+    {
+      "id": "test-physician",
+      "username": "dr.test",
+      "email": "dr.test@denscan.kz",
+      "firstName": "Test",
+      "lastName": "Physician",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPassword123!",
+          "temporary": true
+        }
+      ],
+      "realmRoles": [
+        "physician",
+        "default-roles-dicom"
+      ],
+      "groups": [
+        "/clinics/denscan-central"
+      ],
+      "attributes": {
+        "clinic_ids": ["denscan-central"]
+      }
+    }
+  ]
+}
