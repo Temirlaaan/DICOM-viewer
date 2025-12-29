@@ -1,0 +1,7 @@
+# SSL certificates directory
+# Place your certificates here:
+# - fullchain.pem (certificate + intermediates)
+# - privkey.pem (private key)
+#
+# For development, run: make generate-certs
+# For production, use Let's Encrypt: make ssl-renew

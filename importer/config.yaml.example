@@ -1,0 +1,59 @@
+# =============================================================================
+# DICOM Importer Configuration
+# =============================================================================
+# This file is an example. Environment variables take precedence.
+# =============================================================================
+
+# Paths
+paths:
+  inbox: /inbox
+  processed: /processed
+  failed: /failed
+
+# Orthanc connection
+orthanc:
+  url: http://orthanc:8042
+  timeout: 120
+
+# Keycloak authentication (for service account)
+keycloak:
+  url: http://keycloak:8080
+  realm: dicom
+  client_id: orthanc-api
+  client_secret: ""  # Set via KEYCLOAK_CLIENT_SECRET env var
+
+# Processing settings
+processing:
+  # Seconds to wait after last file modification before processing
+  cooldown_seconds: 60
+
+  # Maximum concurrent study uploads
+  max_concurrent: 3
+
+  # Retry settings
+  max_retries: 3
+  retry_delay: 10
+
+# Logging
+logging:
+  level: info  # debug, info, warning, error
+  format: json  # json or console
+
+# Metrics
+metrics:
+  port: 8080
+  enabled: true
+
+# Notifications (optional)
+notifications:
+  # Telegram notifications for failed imports
+  telegram:
+    enabled: false
+    bot_token: ""
+    chat_id: ""
+
+  # Webhook for external alerting
+  webhook:
+    enabled: false
+    url: ""
+    headers: {}
